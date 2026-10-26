@@ -1,0 +1,32 @@
+# Render Blueprint: creates the API as a free Docker web service.
+# The database lives on Neon (free, does not expire), so it is not defined here.
+# Values marked sync: false are asked for when you apply the Blueprint.
+services:
+  - type: web
+    name: work-os-lite-api
+    runtime: docker
+    plan: free
+    # Both paths are relative to the repo root.
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    buildFilter:
+      paths:
+        - backend/**
+    # /ping does not touch the database, so Neon can still sleep between real requests.
+    healthCheckPath: /ping
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: LLM_PROVIDER
+        value: groq
+      - key: LLM_API_KEY
+        sync: false
+      - key: EMBEDDING_PROVIDER
+        value: hash
+      - key: DEMO_MODE
+        value: "true"
+      - key: CORS_ORIGINS
+        sync: false

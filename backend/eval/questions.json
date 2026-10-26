@@ -1,0 +1,17 @@
+[
+  {"question": "How many days of paid leave does an employee get each year?", "source": "leave_policy.md", "keywords": ["18"]},
+  {"question": "What is the maximum unused leave that carries over to next year?", "source": "leave_policy.md", "keywords": ["10"]},
+  {"question": "How far in advance must planned leave be applied for in the HR portal?", "source": "leave_policy.md", "keywords": ["two weeks"]},
+  {"question": "How many sick days do employees get per year?", "source": "leave_policy.md", "keywords": ["8"]},
+  {"question": "When is a doctor's certificate required for sick leave?", "source": "leave_policy.md", "keywords": ["two"]},
+  {"question": "On which days do production deploys happen?", "source": "deploy_runbook.md", "keywords": ["tuesday", "thursday"]},
+  {"question": "What must pass on staging before a production deploy?", "source": "deploy_runbook.md", "keywords": ["smoke"]},
+  {"question": "Who approves the deploy if the on-call engineer is unavailable?", "source": "deploy_runbook.md", "keywords": ["engineering manager"]},
+  {"question": "When should we roll back after a deploy based on error rate?", "source": "deploy_runbook.md", "keywords": ["2"]},
+  {"question": "How long is the probation period for a new joiner?", "source": "onboarding_guide.md", "keywords": ["6"]},
+  {"question": "Within how many days must the security awareness training be completed?", "source": "onboarding_guide.md", "keywords": ["7"]},
+  {"question": "When are travel expense claims submitted in the finance portal?", "source": "onboarding_guide.md", "keywords": ["30"]},
+  {"question": "What is the office wifi password?", "source": null, "keywords": []},
+  {"question": "Which cafeteria vendor serves lunch on Mondays?", "source": null, "keywords": []},
+  {"question": "What is the stock price target for next quarter?", "source": null, "keywords": []}
+]
