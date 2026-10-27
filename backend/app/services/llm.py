@@ -13,7 +13,7 @@ import httpx
 
 from app.config import settings
 
-TIMEOUT_SECONDS = 60
+TIMEOUT_SECONDS = 120
 
 
 class LLMError(Exception):
