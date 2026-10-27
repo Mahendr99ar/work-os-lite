@@ -8,7 +8,7 @@ jobs:
   backend:
     runs-on: ubuntu-latest
     env:
-      PYTHONPATH: .
+     PYTHONPATH: ${{ github.workspace }}/backend
     services:
       postgres:
         image: pgvector/pgvector:pg16
