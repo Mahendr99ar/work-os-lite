@@ -7,6 +7,8 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    env:
+     PYTHONPATH: ${{ github.workspace }}/backend
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -23,6 +25,7 @@ jobs:
     defaults:
       run:
         working-directory: backend
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
