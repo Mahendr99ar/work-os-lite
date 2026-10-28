@@ -1,5 +1,19 @@
 # Work OS Lite
 
+[![CI](https://github.com/Mahendr99ar/work-os-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/Mahendr99ar/work-os-lite/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.11-3776ab)
+![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688)
+![React](https://img.shields.io/badge/react-18-61dafb)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgvector-336791)
+
+**Live:** [work-os-lite-8crz.vercel.app](https://work-os-lite-8crz.vercel.app) (click "Open a demo workspace", no sign-up)
+
+**API:** [health](https://work-os-lite.onrender.com/health) | [interactive docs](https://work-os-lite.onrender.com/docs)
+
+**Author:** [Mahendra Meena](https://github.com/Mahendr99ar)
+
+> The API runs on Render's free plan and sleeps after 15 minutes without traffic. If the site says it cannot reach the server, give it about a minute and try again.
+
 A team workspace for projects and tasks, with two AI features that never act on their own:
 
 1. **Ask your documents.** Upload team PDFs or notes and ask questions. Answers come only from those documents and name the source file. If the documents do not cover the question, the app says so instead of guessing.
@@ -7,9 +21,19 @@ A team workspace for projects and tasks, with two AI features that never act on 
 
 Every AI call and every approval goes into an audit log. Each team's data is kept apart in one shared database.
 
-**Live demo:** [add your Vercel link] (click "Open a demo workspace", no sign-up)
-
 ![Overview](docs/screenshots/overview.png)
+
+## Live deployment
+
+| Part | Where | Link |
+| --- | --- | --- |
+| Frontend | Vercel | [work-os-lite-8crz.vercel.app](https://work-os-lite-8crz.vercel.app) |
+| API | Render (Docker, free plan) | [work-os-lite.onrender.com](https://work-os-lite.onrender.com) |
+| API health check | Render | [/health](https://work-os-lite.onrender.com/health) (also checks the database) |
+| API docs | Render | [/docs](https://work-os-lite.onrender.com/docs) (Swagger UI from FastAPI) |
+| Database | Neon (PostgreSQL + pgvector) | Private |
+
+The fastest way to try it: open the live site and click **Open a demo workspace**. You get a private sandbox team with two projects, eight tasks, three policy documents and one AI plan waiting for review. Try dragging a task on the board, asking "How many days of paid leave do we get?" in Ask docs, and approving the plan in the AI planner.
 
 ## What you can do
 
@@ -145,7 +169,7 @@ Measured on 27 Oct 2026 with the default offline `hash` embeddings and `MIN_SIMI
 | Retrieval, answerable questions | 11/12 right document ranked first |
 | Retrieval, off-topic questions | 3/3 refused |
 | Overall | 14/15 |
-| Full answer eval with the AI | [run `--mode full` with your key and add the score here] |
+| Full answer eval with the AI | Not run yet; it needs a live API key and calls the real model |
 
 The first run also scored 14/15, but on a different question. "On which days do production deploys happen?" scored 0.137, because the hash embedding treated "deploys" and "deploy" as different words. Adding basic plural handling fixed it. The question that still fails is "Within how many days must the security awareness training be completed?" (0.137): the document says "complete", the question says "completed", and the hash embedding cannot tell they are the same word. Switching to `EMBEDDING_PROVIDER=openai` is the real fix. The threshold was not lowered to make it pass, because tuning on the same 15 questions would only flatter the score on this set.
 
@@ -172,7 +196,14 @@ CI fails the build if the retrieval score drops below 13/15.
 
 ## Checking the AI-written code
 
-[Add one real case from your own build: a piece of AI-generated code that was wrong, how you noticed (a failing test, a review, a manual check), and what you changed.]
+Parts of this code were written with an AI coding assistant, so the code was audited afterwards instead of being trusted as written. The audit reproduced each suspected bug with a failing test before fixing it. The main finds:
+
+- **Duplicate tasks on double approval.** Approval checked the plan's status in Python and then created the tasks. Two approvals arriving at the same moment both passed the check, so a 2-task plan created 4 tasks. A test that sends two approvals at once on Postgres showed it. The fix is a single `UPDATE ... WHERE status = 'pending'`, so the database lets exactly one approval through and the other gets 409.
+- **Audit rows being edited.** Approving a plan changed the status of the earlier "plan generated" audit row. An audit log should only grow, so reviews now add their own row.
+- **Login rate limit bypass.** The limit was keyed only by the `X-Forwarded-For` header, which a client can fake. A test that sent a different fake address with each wrong password never got blocked. Login is now also limited per account.
+- **Default JWT secret.** The app only logged a warning when `JWT_SECRET` was left at its default. It now refuses to start on Postgres with the default value.
+
+All fixes have regression tests in `backend/tests/test_audit_regressions.py`.
 
 ## Project layout
 
