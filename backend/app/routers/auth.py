@@ -3,13 +3,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
 from app.deps import CurrentUser, get_current_user
 from app.models import Team, User
-from app.ratelimit import client_ip, demo_limiter, login_limiter
+from app.ratelimit import account_login_limiter, client_ip, demo_limiter, login_limiter
 from app.schemas import SignupIn, TokenOut, UserOut
 from app.security import create_token, hash_password, verify_password
 from app.services.demo import create_demo_workspace
@@ -29,7 +30,11 @@ def signup(body: SignupIn, request: Request, db: Session = Depends(get_db)) -> T
     db.flush()  # gives the team its id before we create the user
     user = User(team_id=team.id, email=body.email, password_hash=hash_password(body.password), role="admin")
     db.add(user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:  # two sign-ups with the same email at the same moment
+        db.rollback()
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "This email is already registered. Log in instead.")
     return TokenOut(access_token=create_token(user.id, team.id, user.role))
 
 
@@ -40,7 +45,9 @@ def login(request: Request, form: OAuth2PasswordRequestForm = Depends(), db: Ses
     The form field is called `username`; we put the email in it.
     """
     login_limiter.check(f"ip:{client_ip(request)}")
-    user = db.scalar(select(User).where(User.email == form.username.strip().lower()))
+    email = form.username.strip().lower()
+    account_login_limiter.check(f"email:{email}")
+    user = db.scalar(select(User).where(User.email == email))
     # Same message for "no such user" and "wrong password", so emails cannot be probed.
     if user is None or not verify_password(form.password, user.password_hash):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Wrong email or password")

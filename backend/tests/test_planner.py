@@ -74,8 +74,8 @@ def test_admin_approval_creates_tasks_with_dependencies(client, admin, project_i
     assert "Estimate: 3 day(s)" in login_task["description"]
 
     assert client.get(f"/planner/plans/{plan['id']}", headers=admin).json()["status"] == "approved"
-    # Approving twice must not create the tasks twice.
-    assert client.post(f"/planner/plans/{plan['id']}/approve", headers=admin).status_code == 400
+    # Approving twice must not create the tasks twice; the second attempt is a conflict.
+    assert client.post(f"/planner/plans/{plan['id']}/approve", headers=admin).status_code == 409
     assert len(client.get(f"/projects/{project_id}/tasks", headers=admin).json()) == 3
 
 
@@ -86,7 +86,8 @@ def test_reject_keeps_tasks_untouched_and_is_audited(client, admin, project_id, 
     assert client.get(f"/projects/{project_id}/tasks", headers=admin).json() == []
 
     rows = client.get("/audit", headers=admin).json()
-    assert [(r["action"], r["status"]) for r in rows] == [("plan_review", "rejected"), ("plan_generate", "rejected")]
+    # The generation row keeps its original status; the decision is a new row.
+    assert [(r["action"], r["status"]) for r in rows] == [("plan_review", "rejected"), ("plan_generate", "ok")]
 
 
 def test_brief_is_wrapped_as_data(client, admin, project_id, fake_llm):

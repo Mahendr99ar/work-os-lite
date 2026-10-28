@@ -103,6 +103,7 @@ class FakeResponse:
         self.status_code = status_code
         self._payload = payload
         self.text = str(payload)
+        self.headers: dict = {}
 
     def json(self):
         return self._payload
@@ -154,6 +155,8 @@ def test_anthropic_request_shape(monkeypatch):
 
 
 def test_provider_errors_become_llm_errors(monkeypatch):
+    monkeypatch.setattr(llm.time, "sleep", lambda s: None)  # skip the retry wait
+
     def rate_limited(*args, **kwargs):
         return FakeResponse(429, {"error": "slow down"})
 

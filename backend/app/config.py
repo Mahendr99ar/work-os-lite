@@ -25,6 +25,7 @@ class Settings:
     openai_api_key: str  # only needed when EMBEDDING_PROVIDER=openai
     embedding_provider: str  # "hash" (offline, free) or "openai"
     min_similarity: float  # below this score we refuse to answer
+    llm_timeout_seconds: float  # read timeout for one LLM call
     demo_mode: bool  # allows POST /auth/demo, which creates a sandbox workspace
     cors_origins: list[str] = field(default_factory=list)
     cors_origin_regex: str | None = None
@@ -60,6 +61,7 @@ def load_settings() -> Settings:
         openai_api_key=os.getenv("OPENAI_API_KEY", ""),
         embedding_provider=os.getenv("EMBEDDING_PROVIDER", "hash"),
         min_similarity=float(os.getenv("MIN_SIMILARITY", "0.15")),
+        llm_timeout_seconds=float(os.getenv("LLM_TIMEOUT_SECONDS", "90")),
         demo_mode=os.getenv("DEMO_MODE", "true").lower() in ("1", "true", "yes"),
         cors_origins=[o.strip().rstrip("/") for o in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",") if o.strip()],
         cors_origin_regex=os.getenv("CORS_ORIGIN_REGEX") or None,

@@ -31,7 +31,7 @@ The demo button creates a private sandbox team with two projects, eight tasks, t
 | Database | PostgreSQL with pgvector (tasks and embeddings in one database) |
 | AI | Groq, Gemini, OpenAI or Anthropic over plain HTTP, no LangChain |
 | Frontend | React with Vite, plain JavaScript, no UI library |
-| Tests | pytest, 55 tests, run on both SQLite and Postgres |
+| Tests | pytest, 66 tests, run on both SQLite and Postgres |
 | CI | GitHub Actions: tests twice, retrieval eval, frontend build |
 | Hosting | Neon (database), Render (API), Vercel (frontend), all on free plans |
 
@@ -65,7 +65,7 @@ flowchart LR
 
 **Answering from documents.** Uploads are split into chunks of about 500 tokens (375 words) with a 50-word overlap, so a sentence cut at a boundary still appears whole in one chunk. Each chunk is embedded and stored in a pgvector column. A question is embedded the same way and compared with the team's chunks by cosine distance. If the best match scores below `MIN_SIMILARITY`, the app refuses without calling the AI. Otherwise the top 4 chunks go to the model inside `<excerpt>` tags, with an instruction that excerpt text is data and not instructions.
 
-**AI planner.** The model must return JSON matching `TaskPlan` in `app/schemas.py`. A task may only depend on a task listed before it, which also rules out cycles. If the reply fails validation, the exact error goes back to the model for one retry. If the second reply also fails, the request returns 502 and the failure is logged. Approving creates the tasks in one transaction, and a plan cannot be approved twice.
+**AI planner.** The model must return JSON matching `TaskPlan` in `app/schemas.py`. A task may only depend on a task listed before it, which also rules out cycles. If the reply fails validation, the exact error goes back to the model for one retry. If the second reply also fails, the request returns 502 and the failure is logged. Approval is one conditional `UPDATE ... WHERE status = 'pending'` plus the new tasks, in a single transaction. If two approvals arrive together, the database lets exactly one through and the other gets 409, so tasks are never created twice (tested with two concurrent requests on Postgres).
 
 **One code path for four AI providers.** Groq, Gemini and OpenAI all accept the OpenAI chat format, so `app/services/llm.py` sends one request shape to whichever base URL is configured. Anthropic gets its own small function. Switching provider is two environment variables.
 
@@ -107,8 +107,8 @@ Step by step, with every field to fill in and a troubleshooting table: [docs/HOS
 
 ```bash
 cd backend
-pytest                                    # 55 tests on SQLite
-TEST_DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/workos_test pytest   # same tests on Postgres
+pytest                                    # 65 tests on SQLite (1 needs Postgres and is skipped)
+TEST_DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/workos_test pytest   # all 66 tests on Postgres
 ```
 
 Tests replace the AI with a fake that returns queued replies, so they run offline and cost nothing. They cover:
@@ -188,7 +188,7 @@ backend/
     routers/           auth (and demo), team, projects, tasks, documents, planner, audit
     services/          llm, embeddings, chunking, ingest, rag, planner, demo, audit
     demo_docs/         the 3 sample policy documents
-  tests/               55 pytest tests
+  tests/               66 pytest tests
   eval/                15 questions and run_eval.py
 frontend/src/
   api.js               every backend call

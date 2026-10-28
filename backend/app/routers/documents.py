@@ -21,9 +21,9 @@ async def upload_document(file: UploadFile = File(...), scope: TeamScope = Depen
     filename = file.filename or "upload.txt"
     if not filename.lower().endswith(ALLOWED_EXTENSIONS):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Allowed file types: {', '.join(ALLOWED_EXTENSIONS)}")
-    data = await file.read()
+    data = await file.read(MAX_UPLOAD_BYTES + 1)  # never hold more than the limit in memory
     if len(data) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "File is larger than 5 MB")
+        raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "File is larger than 5 MB")
 
     try:
         document = ingest(scope.db, team_id=scope.team_id, user_id=scope.user.id, filename=filename, data=data)
@@ -60,7 +60,7 @@ def ask(body: AskIn, scope: TeamScope = Depends(get_scope)) -> AskOut:
         if isinstance(exc, LLMNotConfigured):
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE,
                                 "AI is not set up on this server. The admin needs to add LLM_API_KEY.")
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"The AI service failed: {exc}")
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"The AI service failed: {exc.public_message}")
 
     audit.log(scope.db, team_id=scope.team_id, user_id=scope.user.id, action="ask",
               input_text=body.question, output=raw or text, status="refused" if refused else "ok")

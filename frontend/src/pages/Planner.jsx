@@ -40,6 +40,7 @@ export default function Planner({ user, meta, go }) {
   }
 
   async function review(plan, approve) {
+    if (reviewing) return
     setReviewing(plan.id)
     try {
       if (approve) {
@@ -49,10 +50,12 @@ export default function Planner({ user, meta, go }) {
         await api.rejectPlan(plan.id)
         toast('Rejected. Nothing was added to the board.')
       }
-      setPlans(await api.plans())
     } catch (err) {
       toast(err.message, 'error')
     } finally {
+      // Always re-read the plans. If someone else reviewed this plan first (409),
+      // the page now shows the real status instead of a stale "Draft".
+      try { setPlans(await api.plans()) } catch { /* keep what we have */ }
       setReviewing(null)
     }
   }

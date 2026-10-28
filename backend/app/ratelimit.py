@@ -39,15 +39,19 @@ class RateLimiter:
 
 
 login_limiter = RateLimiter("login", limit=10, window_seconds=60)
+# Per account, so a forged X-Forwarded-For header cannot be used to keep guessing one password.
+account_login_limiter = RateLimiter("account_login", limit=10, window_seconds=300)
 demo_limiter = RateLimiter("demo", limit=5, window_seconds=3600)
 ask_limiter = RateLimiter("ask", limit=20, window_seconds=60)
 plan_limiter = RateLimiter("plan", limit=6, window_seconds=60)
 
-ALL_LIMITERS = (login_limiter, demo_limiter, ask_limiter, plan_limiter)
+ALL_LIMITERS = (login_limiter, account_login_limiter, demo_limiter, ask_limiter, plan_limiter)
 
 
 def client_ip(request: Request) -> str:
-    # Render and Vercel sit behind a proxy, so the real address is the first entry here.
+    # Render sits behind a proxy. Render staff say the first entry is the real client, but a
+    # client can also send this header itself, so per-IP limits are a soft guard only.
+    # Login is also limited per account (account_login_limiter), which does not depend on IPs.
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
         return forwarded.split(",")[0].strip()

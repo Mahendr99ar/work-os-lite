@@ -121,15 +121,20 @@ export default function Team({ user }) {
 function AddMember({ open, onClose, onAdded }) {
   const toast = useToast()
   const [form, setForm] = useState({ email: '', password: '', role: 'member' })
+  const [saving, setSaving] = useState(false)
 
   async function add(e) {
     e.preventDefault()
+    if (saving) return
+    setSaving(true)
     try {
       const member = await api.addMember(form.email, form.password, form.role)
       setForm({ email: '', password: '', role: 'member' })
       onAdded(member)
     } catch (err) {
       toast(err.message, 'error')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -157,7 +162,7 @@ function AddMember({ open, onClose, onAdded }) {
         <div className="form-actions">
           <span className="spacer" />
           <button type="button" className="btn" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary">Add member</button>
+          <button className="btn btn-primary" disabled={saving}>Add member</button>
         </div>
       </form>
     </Drawer>

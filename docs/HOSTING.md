@@ -219,6 +219,8 @@ Commit and push to `main`. GitHub runs the tests, Render rebuilds the API, and V
 | "groq rejected the API key" | Key copied wrong or deleted | Create a new key in the Groq console and update `LLM_API_KEY`. |
 | "Too many requests. Try again in N seconds." | The app's own limit (10 logins per minute per IP, 5 demo workspaces per hour per IP) | Wait for the time shown. |
 | Everyone gets logged out after a deploy | `JWT_SECRET` changed | Set it once and leave it. With the Blueprint, Render keeps the generated value. |
+| Render log: `JWT_SECRET is the default value` and the service will not start | `JWT_SECRET` is missing | Add a long random `JWT_SECRET` in Render's environment settings. |
+| AI answers time out on Gemini | Gemini replies slowly | Set `LLM_TIMEOUT_SECONDS=120` on Render. The app retries once on timeouts and temporary errors. |
 | Uploaded PDF says "no readable text" | It is a scanned image, not text | Use a PDF with selectable text, or a .txt or .md file. |
 | You switched `EMBEDDING_PROVIDER` and search broke | Vectors from the old model have a different size | Start with a fresh Neon branch or database and upload the documents again. |
 

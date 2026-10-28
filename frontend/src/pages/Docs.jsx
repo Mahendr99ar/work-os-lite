@@ -32,7 +32,7 @@ export default function Docs({ meta }) {
 
   async function upload(files) {
     const list = [...files]
-    if (!list.length) return
+    if (!list.length || uploading) return
     setUploading(true)
     for (const file of list) {
       try {

@@ -160,6 +160,7 @@ function TaskDrawer({ task, tasks, members, projectId, onClose, onSaved }) {
 
   async function save(e) {
     e.preventDefault()
+    if (saving) return
     setSaving(true)
     const body = {
       title: form.title.trim(), description: form.description, status: form.status,
@@ -241,9 +242,12 @@ function ProjectDrawer({ open, onClose, onCreated }) {
   const toast = useToast()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [saving, setSaving] = useState(false)
 
   async function create(e) {
     e.preventDefault()
+    if (saving) return // a double click must not create the project twice
+    setSaving(true)
     try {
       const project = await api.createProject(name.trim(), description)
       setName('')
@@ -251,6 +255,8 @@ function ProjectDrawer({ open, onClose, onCreated }) {
       onCreated(project)
     } catch (err) {
       toast(err.message, 'error')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -267,7 +273,7 @@ function ProjectDrawer({ open, onClose, onCreated }) {
         <div className="form-actions">
           <span className="spacer" />
           <button type="button" className="btn" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary">Create project</button>
+          <button className="btn btn-primary" disabled={saving}>{saving ? 'Creating' : 'Create project'}</button>
         </div>
       </form>
     </Drawer>

@@ -10,7 +10,7 @@ import tempfile
 
 _db_file = os.path.join(tempfile.mkdtemp(), "test.db")
 os.environ["DATABASE_URL"] = os.getenv("TEST_DATABASE_URL", f"sqlite:///{_db_file}")
-os.environ["JWT_SECRET"] = "test-secret"
+os.environ["JWT_SECRET"] = "work-os-lite-test-secret-at-least-32-bytes"
 os.environ["EMBEDDING_PROVIDER"] = "hash"
 os.environ["LLM_PROVIDER"] = "groq"
 os.environ["LLM_API_KEY"] = "test-key"  # never sent anywhere: tests replace the LLM with the fake below

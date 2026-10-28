@@ -15,11 +15,23 @@ from app.routers import audit, auth, documents, planner, projects, tasks, team
 log = logging.getLogger("workos")
 
 
+DEFAULT_JWT_SECRET = "change-me-in-production"
+
+
+def check_settings() -> None:
+    """Refuse to start a real deployment with settings that make it unsafe."""
+    real_database = not settings.database_url.startswith("sqlite")
+    if settings.jwt_secret == DEFAULT_JWT_SECRET:
+        if real_database:
+            # Anyone who reads this repo could sign tokens for any team.
+            raise RuntimeError("JWT_SECRET is the default value. Set a long random secret before starting.")
+        log.warning("JWT_SECRET is the default value. Fine for local SQLite, never for a deployment.")
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    check_settings()
     init_db()
-    if settings.jwt_secret == "change-me-in-production":
-        log.warning("JWT_SECRET is the default value. Set a long random one before going live.")
     yield
 
 
